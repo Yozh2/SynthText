@@ -18,7 +18,7 @@ import traceback, sys
 
 def get_seed(sx,sy,ucm):
     n = sx.size
-    for i in xrange(n):
+    for i in range(n):
         if ucm[sx[i]+1,sy[i]+1] == 0:
             return (sy[i],sx[i])
 
@@ -55,8 +55,8 @@ def get_mask_parallel(ucm_imname):
     try:
         return (get_mask(ucm.T),imname)
     except:
+        traceback.print_exc(file=sys.stdout)
         return None
-        #traceback.print_exc(file=sys.stdout)
 
 def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
     """
@@ -94,26 +94,34 @@ def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
 
             return imname
 
-        def next(self):
+        def __next__(self):
             imname = self.get_valid_name()
             print("%d of %d" % (self.i + 1, self.N))
-            ucm = self.ucm_h5[self.ucm_h5['ucms'][0,self.i]][:]
+            keys = list(self.ucm_h5['ucms'].keys())
+            ucm = self.ucm_h5['ucms'][keys[self.i]][:]
             ucm = ucm.copy()
             self.i += 1
-            return ((ucm>self.th).astype('uint8'),imname)
+            return ((ucm > self.th).astype(np.uint8), imname)
 
     ucm_iter = ucm_iterable(db_path, th)
-    print("cpu count: ", mp.cpu_count())
-    parpool = mp.Pool(4)
+    cpu_count = mp.cpu_count()
+    print("cpu count: ", cpu_count)
+    parpool = mp.Pool(cpu_count)
+    
+#     ucm_result = list()
+#     for ucm in ucm_iter:
+#         ucm_result.append(get_mask_parallel
+    
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
+    print(ucm_result.__class__)
 
     for res in ucm_result:
         if res is None:
             continue
-        ((mask,area,label),imname) = res
+        ((mask,area,label), imname) = res
         print("got back : ", imname)
         mask = mask.astype('uint16')
-        mask_dset = dbo_mask.create_dataset(imname, data=mask)
+        mask_dset = dbo_mask.create_dataset(imname, data=mask.T)
         mask_dset.attrs['area'] = area
         mask_dset.attrs['label'] = label
 
