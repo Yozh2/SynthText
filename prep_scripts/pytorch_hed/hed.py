@@ -17,13 +17,18 @@ import PIL.Image
 import torch
 import torch.utils.serialization
 
+# Default paths and names
+RAW_DATA_DIR = '../../data/images/raw'
+OUTPUT_DIR = '../../data/images/depths'
+MODEL = 'bsds500'
+
 ##########################################################
 assert(int(torch.__version__.replace('.', '')) >= 40) # requires at least pytorch version 0.4.0
 torch.set_grad_enabled(False) # make sure to not compute gradients for computational performance
 ##########################################################
 
 class Network(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, model=MODEL):
         super(Network, self).__init__()
 
         self.moduleVggOne = torch.nn.Sequential(
@@ -82,7 +87,7 @@ class Network(torch.nn.Module):
             torch.nn.Sigmoid()
         )
 
-        self.load_state_dict(torch.load('./models/' + arguments_strModel + '.pytorch', map_location='cpu'))
+        self.load_state_dict(torch.load('./models/' + model + '.pytorch', map_location='cpu'))
     # end
 
     def forward(self, tensorInput):
@@ -192,7 +197,7 @@ if __name__ == '__main__':
         """ Parses arguments and returns args object to the main program"""
         parser = argparse.ArgumentParser()
         parser.add_argument('-m', '--model', type=str, nargs='?',
-                            default='bsds500',
+                            default=MODEL,
                             help="The name of the model to use.")
         parser.add_argument('-i', '--in', type=str, nargs='?',
                             default=osp.join(RAW_DATA_DIR, 'curved_paper.jpg'),
@@ -208,4 +213,4 @@ if __name__ == '__main__':
     # parse arguments
     ARGS, UNKNOWN = parse_args()
 
-    process_images(path_input=ARGS.in, path_output=ARGS.out, verbose=ARGS.VERBOSE)
+    process_images(path_input=ARGS.i, path_output=ARGS.out, verbose=ARGS.VERBOSE)
