@@ -1,43 +1,25 @@
 #!/usr/bin/env python
 
-import getopt
-import math
-import numpy
+# Standard imports
 import os
+import os.path as osp
+import sys
+
+# Third-party imports
+import argparse
+import getopt
+import h5py
+import numpy as np
 import PIL
 import PIL.Image
-import sys
+
+# PyTorch imports
 import torch
 import torch.utils.serialization
-# Custom imports
-import numpy as np
-import h5py
 
 ##########################################################
-
 assert(int(torch.__version__.replace('.', '')) >= 40) # requires at least pytorch version 0.4.0
-
 torch.set_grad_enabled(False) # make sure to not compute gradients for computational performance
-
-##########################################################
-
-arguments_strModel = 'bsds500'
-arguments_strIn = './images/sample.png'
-arguments_strOut = './out.png'
-
-for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:] + '=' for strParameter in sys.argv[1::2] ])[0]:
-    if strOption == '--model':
-        arguments_strModel = strArgument # which model to use
-
-    elif strOption == '--in':
-        arguments_strIn = strArgument # path to the input image
-
-    elif strOption == '--out':
-        arguments_strOut = strArgument # path to where the output should be stored
-
-    # end
-# end
-
 ##########################################################
 
 class Network(torch.nn.Module):
@@ -142,31 +124,16 @@ def estimate(tensorInput):
     intWidth = tensorInput.size(2)
     intHeight = tensorInput.size(1)
 
-    #	assert(intWidth == 480) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
-    #	assert(intHeight == 320) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
+    tensorPreprocessed = tensorInput.view(1, 3, intHeight, intWidth)
+    tensorOutput.resize_(1, intHeight, intWidth).copy_(moduleNetwork(tensorPreprocessed)[0, :, :, :])
 
-    if True:
-        tensorInput = tensorInput
-        tensorOutput = tensorOutput
-    # end
-
-    if True:
-        tensorPreprocessed = tensorInput.view(1, 3, intHeight, intWidth)
-
-        tensorOutput.resize_(1, intHeight, intWidth).copy_(moduleNetwork(tensorPreprocessed)[0, :, :, :])
-    # end
-
-    if True:
-        tensorInput = tensorInput.cpu()
-        tensorOutput = tensorOutput.cpu()
-    # end
-
+    tensorInput = tensorInput.cpu()
+    tensorOutput = tensorOutput.cpu()
     return tensorOutput
-# end
 
 ##########################################################
 
-def add_segs_to_db(db_path='segs.h5', segs=None, imgname='image'):
+def add_segs_to_db(db_path='segs.h5', segs=None, imgnames=None):
     """
     Add segmentated images and their names
     to the dataset.
@@ -187,21 +154,58 @@ def add_segs_to_db(db_path='segs.h5', segs=None, imgname='image'):
     db.create_dataset('names', (len(names_ascii),1),'S10', names_ascii)
     db.close()
 
-if __name__ == '__main__':
-    tensorInput = torch.FloatTensor(numpy.array(PIL.Image.open(arguments_strIn))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0))
 
-    tensorOutput = estimate(tensorInput)
+def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=False):
+    '''Process every raw image in path_input dir and store result in path_output dir'''
+
+    if not osp.exists(path_input):
+        if verbose:
+            print(f'[HED]: Wrong input path {path_input}')
+        raise FileNotFoundError
+
+    # Create torch tensor and load image for every image in the directory
+    files = [f for f in os.listdir(path_input) if osp.isfile(osp.join(path_input, f))]
+    n = len(files)
+
+    if verbose:
+        print(f'[HED]: Found {len(files)} files in {path_input}')
 
     segs = list()
+    for i in range(n):
+        img = np.array(PIL.Image.open(path_input))[:, :, ::-1]
+        img = img.transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0)
+        tensorInput = torch.FloatTensor(img)
+        tensorOutput = estimate(tensorInput)
 
-    # Get segmentation
-    seg = (tensorOutput.clamp(0.0, 1.0).numpy().transpose(1, 2, 0)[:, :, 0] * 255.0).astype(numpy.uint8)
-    segs.append(seg)
-    
-    # Save image to the filesystem
-    PIL.Image.fromarray(seg).save(arguments_strOut)
-    
+        # Get segmentation
+        seg = (tensorOutput.clamp(0.0, 1.0).np().transpose(1, 2, 0)[:, :, 0] * 255.0).astype(np.uint8)
+        segs.append(seg)
+
     # Save segmentation to the dataset via h5py
-    add_segs_to_db(segs=segs, db_path=arguments_strOut+'.h5')
-    
-# end
+    input_dir_name = os.path.basename(RAW_DATA_DIR)
+    output_dset_path = osp.join(OUTPUT_DIR, input_dir_name, '.h5')
+    add_segs_to_db(segs=segs, db_path=output_dset_path, imgnames=imgnames)
+
+
+if __name__ == '__main__':
+    def parse_args():
+        """ Parses arguments and returns args object to the main program"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-m', '--model', type=str, nargs='?',
+                            default='bsds500',
+                            help="The name of the model to use.")
+        parser.add_argument('-i', '--in', type=str, nargs='?',
+                            default=osp.join(RAW_DATA_DIR, 'curved_paper.jpg'),
+                            help="Path to the imput dir with raw images.")
+        parser.add_argument('-o', '--out', type=str, nargs='?',
+                            default=osp.join(OUTPUT_DIR, 'curved_paper_depth.jpg'),
+                            help="Path to the output dir with depth images and datasets.")
+        parser.add_argument('-v', '--verbose', action="store_true",
+                            default=False,
+                            help="Print info to the console.")
+        return parser.parse_known_args()
+
+    # parse arguments
+    ARGS, UNKNOWN = parse_args()
+
+    process_images(path_input=ARGS.in, path_output=ARGS.out, verbose=ARGS.VERBOSE)
