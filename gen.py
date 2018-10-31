@@ -31,7 +31,7 @@ DATA_PATH = 'data'
 DB_FNAME = osp.join(DATA_PATH,'dset.h5')
 # url of the data (google-drive public file):
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
-OUT_FILE = 'results/SynthText.h5'
+OUT_FILE = 'results/curved_paper.h5'
 
 def get_data():
   """
@@ -56,8 +56,9 @@ def get_data():
       sys.stdout.flush()
       sys.exit(-1)
   # open the h5 file and return:
-  return h5py.File(DB_FNAME,'r')
-
+  db = h5py.File(DB_FNAME,'r')
+  print('[SynthText]: Opened dataset file', DB_FNAME)
+  return db
 
 def add_res_to_db(imgname,res,db):
   """
@@ -69,7 +70,7 @@ def add_res_to_db(imgname,res,db):
     dname = "%s_%d"%(imgname, i)
     db['data'].create_dataset(dname,data=res[i]['img'])
     db['data'][dname].attrs['charBB'] = res[i]['charBB']
-    db['data'][dname].attrs['wordBB'] = res[i]['wordBB']        
+    db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
     #db['data'][dname].attrs['txt'] = res[i]['txt']
     L = res[i]['txt']
     L = [n.encode("ascii", "ignore") for n in L]
@@ -95,18 +96,24 @@ def main(viz=False):
     NUM_IMG = N
   start_idx,end_idx = 0,min(NUM_IMG, N)
 
+  print('[SynthText]: Initializing RV3')
   RV3 = RendererV3(DATA_PATH,max_time=SECS_PER_IMG)
+  print('[SynthText]: Initializing RV3: DONE')
   for i in range(start_idx,end_idx):
     imname = imnames[i]
     try:
       # get the image:
-      img = Image.fromarray(db['image'][imname][:])
+      img_raw = db['image'][imname][:]
+      # img_raw[img_raw < 1] = 1
+      img = Image.fromarray(img_raw)
       # get the pre-computed depth:
       #  there are 2 estimates of depth (represented as 2 "channels")
       #  here we are using the second one (in some cases it might be
       #  useful to use the other one):
-      depth = db['depth'][imname][:].T
-      depth = depth[:,:,1]
+      # depth = db['depth'][imname][:].T
+      # depth = depth[:,:,1]
+      depth = db['depth'][imname][:]
+
       # get segmentation:
       seg = db['seg'][imname][:].astype('float32')
       area = db['seg'][imname].attrs['area']
