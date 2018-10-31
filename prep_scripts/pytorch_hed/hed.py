@@ -138,20 +138,22 @@ def estimate(tensorInput):
 
 ##########################################################
 
-def add_segs_to_db(db_path='segs.h5', segs=None, imgnames=None):
+def add_segs_to_db(db_path='segs.h5', segs=None):
     """
     Add segmentated images and their names
     to the dataset.
     """
-    db = h5py.File(db_path,'w')
+
+    abs_db_path = osp.abspath(db_path)
+
+    db = h5py.File(abs_db_path,'w')
     db.create_group("ucms")
     names = list()
-    ninstance = len(segs)
+    seg_names = list(segs.keys())
 
-    for i in range(ninstance):
-        dname = "%s_%d"%(imgname, i)
-
-        db['ucms'].create_dataset(dname, data=segs[i])
+    for fname in seg_names:
+        dname = fname
+        db['ucms'].create_dataset(dname, data=segs[fname])
         names.append(dname)
 
     # add names
@@ -175,21 +177,25 @@ def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=Fals
     if verbose:
         print(f'[HED]: Found {len(files)} files in {path_input}')
 
-    segs = list()
+    segs = dict()
     for i in range(n):
-        img = np.array(PIL.Image.open(path_input))[:, :, ::-1]
+        img_name = osp.join(path_input, files[i])
+        img = np.array(PIL.Image.open(img_name))[:, :, ::-1]
         img = img.transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0)
         tensorInput = torch.FloatTensor(img)
         tensorOutput = estimate(tensorInput)
 
         # Get segmentation
-        seg = (tensorOutput.clamp(0.0, 1.0).np().transpose(1, 2, 0)[:, :, 0] * 255.0).astype(np.uint8)
-        segs.append(seg)
+        seg = (tensorOutput.clamp(0.0, 1.0).numpy().transpose(1, 2, 0)[:, :, 0] * 255.0).astype(np.uint8)
+        segs[files[i]] = seg
 
     # Save segmentation to the dataset via h5py
-    input_dir_name = os.path.basename(RAW_DATA_DIR)
-    output_dset_path = osp.join(OUTPUT_DIR, input_dir_name, '.h5')
-    add_segs_to_db(segs=segs, db_path=output_dset_path, imgnames=imgnames)
+    if not osp.exists(path_output):
+        os.makedirs(path_output, exist_ok=True)
+
+    output_dset_path = osp.join(path_output, osp.basename(path_output) + '.h5')
+    print(output_dset_path)
+    add_segs_to_db(segs=segs, db_path=output_dset_path)
 
 
 if __name__ == '__main__':
@@ -199,11 +205,11 @@ if __name__ == '__main__':
         parser.add_argument('-m', '--model', type=str, nargs='?',
                             default=MODEL,
                             help="The name of the model to use.")
-        parser.add_argument('-i', '--in', type=str, nargs='?',
-                            default=osp.join(RAW_DATA_DIR, 'curved_paper.jpg'),
+        parser.add_argument('-i', '--inp', type=str, nargs='?',
+                            default=RAW_DATA_DIR,
                             help="Path to the imput dir with raw images.")
         parser.add_argument('-o', '--out', type=str, nargs='?',
-                            default=osp.join(OUTPUT_DIR, 'curved_paper_depth.jpg'),
+                            default=OUTPUT_DIR,
                             help="Path to the output dir with depth images and datasets.")
         parser.add_argument('-v', '--verbose', action="store_true",
                             default=False,
@@ -213,4 +219,4 @@ if __name__ == '__main__':
     # parse arguments
     ARGS, UNKNOWN = parse_args()
 
-    process_images(path_input=ARGS.i, path_output=ARGS.out, verbose=ARGS.VERBOSE)
+    process_images(path_input=ARGS.inp, path_output=ARGS.out, verbose=ARGS.verbose)
