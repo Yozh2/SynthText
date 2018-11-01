@@ -5,16 +5,22 @@ This assings the same integer label to all the pixels in the same segment.
 Author: Ankush Gupta
 """
 
-from __future__ import division
-from __future__ import print_function
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import scipy.io as sio
-import h5py
+import argparse
+import os
 import os.path as osp
+import cv2
+import h5py
+import matplotlib.pyplot as plt
 import multiprocessing as mp
-import traceback, sys
+import numpy as np
+import scipy.io as sio
+import sys
+import traceback
+
+# Define default paths
+BASE_DIR = '../data/images'
+DB_PATH = osp.join(BASE_DIR, 'segs', 'segs.h5')
+OUT_PATH = osp.join(BASE_DIR, 'labels', 'labels.h5')
 
 def get_seed(sx,sy,ucm):
     n = sx.size
@@ -42,7 +48,7 @@ def get_mask(ucm,viz=False):
         sx,sy = np.where(mask==0)
         seed = get_seed(sx,sy,ucm)
         i += 1
-    print("  > terminated in %d steps" % i)
+    print("[floodFill]: terminated in %d steps" % i)
 
     if viz:
         plt.imshow(mask)
@@ -58,12 +64,12 @@ def get_mask_parallel(ucm_imname):
         traceback.print_exc(file=sys.stdout)
         return None
 
-def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
+def process_db_parallel(db_path, dbo_mask, th=0.11):
     """
     Get segmentation masks from gPb contours.
     """
     class ucm_iterable(object):
-        def __init__(self,ucm_path,th):
+        def __init__(self, ucm_path, th):
             self.th = th
             self.ucm_h5 = h5py.File(db_path,'r')
             self.N = self.ucm_h5['names'].size
@@ -76,7 +82,7 @@ def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
             return "".join(map(chr, self.ucm_h5['names'][0,self.i][:]))
 
         def __stop__(self):
-            print("DONE")
+            print("[floodFill]: Done")
             self.ucm_h5.close()
             raise StopIteration
 
@@ -96,7 +102,7 @@ def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
 
         def __next__(self):
             imname = self.get_valid_name()
-            print("%d of %d" % (self.i + 1, self.N))
+            print("[floodFill]: %d of %d" % (self.i + 1, self.N))
             keys = list(self.ucm_h5['ucms'].keys())
             ucm = self.ucm_h5['ucms'][keys[self.i]][:]
             ucm = ucm.copy()
@@ -105,39 +111,59 @@ def process_db_parallel(base_dir, db_path, dbo_mask, th=0.11):
 
     ucm_iter = ucm_iterable(db_path, th)
     cpu_count = mp.cpu_count()
-    print("cpu count: ", cpu_count)
+    print("[floodFill]: cpu count: ", cpu_count)
     parpool = mp.Pool(cpu_count)
-    
-#     ucm_result = list()
-#     for ucm in ucm_iter:
-#         ucm_result.append(get_mask_parallel
-    
+
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
-    print(ucm_result.__class__)
 
     for res in ucm_result:
         if res is None:
             continue
         ((mask,area,label), imname) = res
-        print("got back : ", imname)
+        print("[floodFill]: got back : ", imname)
         mask = mask.astype('uint16')
         mask_dset = dbo_mask.create_dataset(imname, data=mask.T)
         mask_dset.attrs['area'] = area
         mask_dset.attrs['label'] = label
 
-# Setup paths
-base_dir = '/home/gayduchenko/data/' # directory containing the ucm.mat, i.e., output of run_ucm.m
-db_path = osp.join(base_dir,'curved_paper_segmented.jpg.h5')
-out_path = osp.join(base_dir,'curved_paper_labels.h5')
+def floodfill_dir(db_path=DB_PATH, out_path=OUT_PATH, verbose=False):
 
-# output h5 file:
-print('Creating output h5 file %s' % out_path)
-dbo = h5py.File(out_path,'w')
-dbo_mask = dbo.create_group("mask")    
-    
-process_db_parallel(base_dir, db_path, dbo_mask)
+    if not osp.exists(db_path):
+        if verbose:
+            print('[floodFill]: Input dataset not found', db_path)
+        raise FileNotFoundError
 
-# close the h5 files:
-print("closing DB")
-dbo.close()
-print(">>>> DONE")
+    if verbose:
+        print('[floodFill]: Creating output h5 file %s' % out_path)
+
+    if not osp.exists(osp.dirname(out_path)):
+        os.makedirs(osp.dirname(out_path), exist_ok=True)
+
+    dbo = h5py.File(out_path, 'w')
+    dbo_mask = dbo.create_group("mask")
+
+    process_db_parallel(db_path, dbo_mask)
+    dbo.close()
+
+    if verbose:
+        print("[floodFill]: Done")
+
+if __name__ == '__main__':
+    def parse_args():
+        """ Parses arguments and returns args object to the main program"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-i', '--inp', type=str, nargs='?',
+                            default=DB_PATH,
+                            help="Path to the segs h5 dataset.")
+        parser.add_argument('-o', '--out', type=str, nargs='?',
+                            default=OUT_PATH,
+                            help="Path where to save the labeled h5 dataset.")
+        parser.add_argument('-v', '--verbose', action="store_true",
+                            default=False,
+                            help="Print info to the console.")
+        return parser.parse_known_args()
+
+    # parse arguments
+    ARGS, UNKNOWN = parse_args()
+
+    floodfill_dir(ARGS.inp, ARGS.out, ARGS.verbose)

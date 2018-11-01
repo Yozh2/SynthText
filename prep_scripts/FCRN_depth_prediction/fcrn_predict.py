@@ -3,10 +3,6 @@ import os
 import numpy as np
 import tensorflow as tf
 
-# Disable matplotlib drawing frontend because it is not available on the server
-import matplotlib
-matplotlib.use('agg')
-
 import matplotlib.pyplot as plt
 import cv2
 import models
@@ -47,13 +43,13 @@ class FCRNDepthPredictor:
         # Create a placeholder for the input image
         self.input_node = tf.placeholder(tf.float32, shape=(None, image_shape[0], image_shape[1], channels))
         if self.verbose:
-            print('-> Input placeholder created...')
+            print('[FCRN]: Input tensorflow placeholder created...')
 
         # Construct the network
         self.net = models.ResNet50UpProj({'data': self.input_node},
                                          self.batch_size, 1, False)
         if self.verbose:
-            print('-> ResNet50 initialized...')
+            print('[FCRN]: ResNet50 initialized...')
 
 
     def load_weights(self, sess=None):
@@ -72,12 +68,12 @@ class FCRNDepthPredictor:
         # Load original image
         if not os.path.exists(image_path):
             if self.verbose:
-                print(f'Image {image_path} was not found!')
+                print(f'[FCRN]: Image {image_path} was not found!')
             raise FileNotFoundError
         else:
             image_cv2 = cv2.imread(image_path)
         if self.verbose:
-            print(f'Original image loaded with shape: {image_cv2.shape}')
+            print(f'[FCRN]: Original image loaded with shape: {image_cv2.shape}')
 
         # Resize image to the requested shapes
         if height is None:
@@ -87,15 +83,14 @@ class FCRNDepthPredictor:
         image_cv2 = cv2.resize(image_cv2, (width, height),
             interpolation = cv2.INTER_AREA)
         if self.verbose:
-            print(f'Resized image shape: {image_cv2.shape}')
+            print(f'[FCRN]: Resized image shape: {image_cv2.shape}')
 
         # Preprocess image to use it with tensorflow
         image_cv2 = image_cv2.astype('float32')
         image_cv2 = np.expand_dims(image_cv2, axis=0)
         if self.verbose:
-            print(f'Postprocessed image shape: {image_cv2.shape}')
+            print(f'[FCRN]: Postprocessed image shape: {image_cv2.shape}')
         return image_cv2
-
 
     def save_depth(self, depth, path):
         '''Save depth as numpy pickle and as image'''
@@ -104,7 +99,6 @@ class FCRNDepthPredictor:
         fig.colorbar(ii)
         plt.savefig('%s.png' % path)
         np.save('%s.npy' % path, depth)
-
 
     def predict_dir(self, model_path, dir_path):
         '''Predict depth for all images in the dir_path'''
@@ -128,11 +122,11 @@ def main():
     def parse_args():
         """Parses arguments and returns args object to the main program"""
         parser = argparse.ArgumentParser()
-        parser.add_argument('-m', '--model_path', default='models/NYU_FCRN.ckpt',
+        parser.add_argument('-m', '--model', default='models/NYU_FCRN.ckpt',
                             help='Converted parameters for the model')
-        parser.add_argument('-i', '--image_path', default='images/image.png',
+        parser.add_argument('-i', '--inp', default='images/image.png',
                             help='Image (or directory) to predict depth for')
-        parser.add_argument('-d', '--predict_dir', action='store_true', default=False,
+        parser.add_argument('-d', '--out', action='store_true', default=False,
                             help='Interpret image path as a directory containing images. \
                             Make prediction for every image in the directory.')
         parser.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -144,7 +138,7 @@ def main():
 
     fcrn = FCRNDepthPredictor(args.model_path, args.image_path, args.predict_dir,
                               (1024, 768), channels=3, batch_size=1, verbose=args.verbose)
-    
+
     with tf.Session() as sess:
         fcrn.load_weights(sess)
 

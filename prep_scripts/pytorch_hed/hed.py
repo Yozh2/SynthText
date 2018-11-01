@@ -19,7 +19,7 @@ import torch.utils.serialization
 
 # Default paths and names
 RAW_DATA_DIR = '../../data/images/raw'
-OUTPUT_DIR = '../../data/images/depths'
+OUTPUT_DIR = '../../data/images/segs'
 MODEL = 'bsds500'
 
 ##########################################################
@@ -194,8 +194,11 @@ def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=Fals
         os.makedirs(path_output, exist_ok=True)
 
     output_dset_path = osp.join(path_output, osp.basename(path_output) + '.h5')
-    print(output_dset_path)
+    if verbose:
+        print('[HED]: Storing estimated data in ', output_dset_path)
     add_segs_to_db(segs=segs, db_path=output_dset_path)
+    if verbose:
+        print('[HED]: Done')
 
 
 if __name__ == '__main__':
