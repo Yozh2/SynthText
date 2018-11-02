@@ -126,7 +126,7 @@ class FCRNDepthPredictor:
 
         if not osp.exists(path_output):
             if self.verbose:
-                print('[FCRN]: Creating output directory {path_output} as it was not found.')
+                print(f'[FCRN]: Creating output directory {path_output} as it was not found.')
             os.makedirs(path_output)
 
         # create and setup h5 dataset file

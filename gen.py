@@ -20,7 +20,6 @@ from synthgen import *
 from common import *
 import wget, tarfile
 
-
 ## Define some configuration variables:
 NUM_IMG = -1 # no. of images to use for generation (-1 to use all available):
 INSTANCE_PER_IMAGE = 1 # no. of times to use the same image
@@ -31,7 +30,7 @@ DATA_PATH = 'data'
 DB_FNAME = osp.join(DATA_PATH,'dset.h5')
 # url of the data (google-drive public file):
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
-OUT_FILE = 'results/curved_paper.h5'
+OUT_FILE = 'results/SynthText.h5'
 
 def get_data():
   """
