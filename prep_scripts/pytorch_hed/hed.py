@@ -158,7 +158,7 @@ def add_segs_to_db(db_path='segs.h5', segs=None):
 
     # add names
     names_ascii = [n.encode("ascii", "ignore") for n in names]
-    db.create_dataset('names', (len(names_ascii),1),'S10', names_ascii)
+    db.create_dataset('names', (len(names_ascii),1),'S256', names_ascii)
     db.close()
 
 

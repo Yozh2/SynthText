@@ -31,22 +31,22 @@ def get_seed(sx,sy,ucm):
 def get_mask(ucm,viz=False):
     ucm = ucm.copy()
     h,w = ucm.shape[:2]
-    mask = np.zeros((h-2,w-2),'float32')
+    mask = np.zeros((h-2, w-2), 'float32')
 
     i = 0
     sx,sy = np.where(mask==0)
-    seed = get_seed(sx,sy,ucm)
+    seed = get_seed(sx, sy, ucm)
     areas = []
     labels=[]
     while seed is not None and i<1000:
-        cv2.floodFill(mask,ucm,seed,i+1)
+        cv2.floodFill(mask, ucm, seed, i + 1)
         # calculate the area (no. of pixels):
-        areas.append(np.sum(mask==i+1))
-        labels.append(i+1)
+        areas.append(np.sum(mask == i + 1))
+        labels.append(i + 1)
 
         # get the location of the next seed:
-        sx,sy = np.where(mask==0)
-        seed = get_seed(sx,sy,ucm)
+        sx,sy = np.where(mask == 0)
+        seed = get_seed(sx, sy, ucm)
         i += 1
     print("[floodFill]: terminated in %d steps" % i)
 
