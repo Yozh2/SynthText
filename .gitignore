@@ -100,6 +100,7 @@ data/images/raw/*
 
 ## except the example dataset
 !data/images/raw/curved_paper.jpg
+!data/images/raw/garold.jpg
 !data/images/depths/depths.h5
 !data/images/segs/segs.h5
 !data/images/labels/labels.h5
