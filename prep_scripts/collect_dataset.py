@@ -41,7 +41,7 @@ def collect_existing_datasets(path_images=COLLECT_IMAGES_PATH,
     # Open depth dataset
     check_path(path_depths)
     depths = h5py.File(osp.abspath(path_depths), 'r')
-    depths_names = sorted([n.decode() for n in list(depths['names'][0])])
+    depths_names = sorted([n[0].decode() for n in list(depths['names'])])
     print(f'[COLLECT]: Found {len(depths_names)} depths in {path_depths}')
 
     # Open labels dataset
@@ -52,6 +52,7 @@ def collect_existing_datasets(path_images=COLLECT_IMAGES_PATH,
 
     # Check if we got the same amount of images, depths, labels
     print('[COLLECT]: Matching image names with depth and label names')
+    assert len(images_names) == len(depths_names) == len(labels_names)
     for i in range(len(images_names)):
         assert images_names[i] == depths_names[i] == labels_names[i]
     print('[COLLECT]: Seems legit')

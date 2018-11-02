@@ -92,6 +92,9 @@ ENV/
 # Visual Studio Code settings
 .vscode
 
+# Python .swp files
+*.swp
+
 # data directory datasets
 data/images/depths/*
 data/images/segs/*

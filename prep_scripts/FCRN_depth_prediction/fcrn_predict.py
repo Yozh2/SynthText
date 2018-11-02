@@ -147,6 +147,7 @@ class FCRNDepthPredictor:
             pred = self.predict(image, sess)
 
             # store depth into dataset
+            print(f'Saving data {i+1} of {n}')
             depths['depths'].create_dataset(files[i], data=pred)
 
         depths.close()
