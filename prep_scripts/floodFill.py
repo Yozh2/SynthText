@@ -106,6 +106,7 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
             keys = list(self.ucm_h5['ucms'].keys())
             ucm = self.ucm_h5['ucms'][keys[self.i]][:]
             ucm = ucm.copy()
+            print(ucm.shape)
             self.i += 1
             return ((ucm > self.th).astype(np.uint8), imname)
 
@@ -115,6 +116,7 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
     parpool = mp.Pool(cpu_count)
 
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
+    print(ucm_result)
 
     for res in ucm_result:
         if res is None:
