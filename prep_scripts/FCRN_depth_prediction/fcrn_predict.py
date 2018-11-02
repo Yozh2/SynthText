@@ -18,6 +18,7 @@ FCRN_MODEL_PATH = './models/NYU_FCRN.ckpt'
 FCRN_INPUT_PATH = '../../data/images/raw'
 FCRN_OUTPUT_PATH = '../../data/images/depths'
 FCRN_IMAGE_SHAPE = (1024, 768) # height, width in pixels
+VERBOSE = True
 
 class FCRNDepthPredictor:
     def __init__(self, path_model=FCRN_MODEL_PATH,
@@ -129,9 +130,13 @@ class FCRNDepthPredictor:
             os.makedirs(path_output)
 
         # create and setup h5 dataset file
-        depths = h5py.File(path_output, 'w')
+        dataset_name = 'depths.h5'
+        dataset_path = osp.abspath(osp.join(path_output, dataset_name))
+        depths = h5py.File(dataset_path, 'w')
         depths.create_group('depths')
-        depths.create_dataset('names', data=files)
+
+        names_ascii = [n.encode("ascii", "ignore") for n in files]
+        depths.create_dataset('names', (len(names_ascii),1),'S256', names_ascii)
 
         for i in range(n):
             # load image
@@ -174,14 +179,13 @@ if __name__ == '__main__':
     def parse_args():
         """Parses arguments and returns args object to the main program"""
         parser = argparse.ArgumentParser()
-        parser.add_argument('-m', '--model', default='models/NYU_FCRN.ckpt',
+        parser.add_argument('-m', '--model', default=FCRN_MODEL_PATH,
                             help='Converted parameters for the model')
-        parser.add_argument('-i', '--inp', default='images/image.png',
-                            help='Image (or directory) to predict depth for')
-        parser.add_argument('-d', '--out', action='store_true', default=False,
-                            help='Interpret image path as a directory containing images. \
-                            Make prediction for every image in the directory.')
-        parser.add_argument('-v', '--verbose', action='store_true', default=False,
+        parser.add_argument('-i', '--inp', default=FCRN_INPUT_PATH,
+                            help='Path to directory with input images')
+        parser.add_argument('-o', '--out', default=FCRN_OUTPUT_PATH,
+                            help='Path to the directory the output dataset will be stored in')
+        parser.add_argument('-v', '--verbose', action='store_true', default=VERBOSE,
                             help='Print debug information to the console')
         return parser.parse_known_args()
 
