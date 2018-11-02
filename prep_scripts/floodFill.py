@@ -48,7 +48,7 @@ def get_mask(ucm,viz=False):
         sx,sy = np.where(mask == 0)
         seed = get_seed(sx, sy, ucm)
         i += 1
-    print("[floodFill]: terminated in %d steps" % i)
+    print("[floodFill]: floodfill terminated in %d steps" % i)
 
     if viz:
         plt.imshow(mask)
@@ -78,18 +78,21 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
         def __iter__(self):
             return self
 
-        def get_imname(self,i):
-            return "".join(map(chr, self.ucm_h5['names'][0,self.i][:]))
+        def get_imname(self, i=None):
+            if i is None:
+                i = self.i
 
+            return self.ucm_h5['names'][i][0].decode()
+            
         def __stop__(self):
-            print("[floodFill]: Done")
+            print("[floodFill]: Done multiprocessing")
             self.ucm_h5.close()
             raise StopIteration
 
         def get_valid_name(self):
             if self.i >= self.N:
                 self.__stop__()
-
+            
             imname = self.get_imname(self.i)
             while self.i < self.N-1 and len(imname) < 4:
                 self.i += 1
@@ -97,7 +100,7 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
 
             if len(imname) < 4:
                 self.__stop__()
-
+            
             return imname
 
         def __next__(self):
@@ -106,7 +109,6 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
             keys = list(self.ucm_h5['ucms'].keys())
             ucm = self.ucm_h5['ucms'][keys[self.i]][:]
             ucm = ucm.copy()
-            print(ucm.shape)
             self.i += 1
             return ((ucm > self.th).astype(np.uint8), imname)
 
@@ -115,14 +117,15 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
     print("[floodFill]: cpu count: ", cpu_count)
     parpool = mp.Pool(cpu_count)
 
+    print('[floodFill]: Creating multiprocessing pool')
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
-    print(ucm_result)
 
+    print('[floodFill]: Processing data')
     for res in ucm_result:
         if res is None:
             continue
         ((mask,area,label), imname) = res
-        print("[floodFill]: got back : ", imname)
+        print("[floodFill]: got back: ", imname)
         mask = mask.astype('uint16')
         mask_dset = dbo_mask.create_dataset(imname, data=mask.T)
         mask_dset.attrs['area'] = area
