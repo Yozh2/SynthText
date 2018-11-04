@@ -96,17 +96,17 @@ ENV/
 *.swp
 
 # data directory datasets
-data/images/depths/*
-data/images/segs/*
-data/images/labels/*
-data/images/raw/*
+# data/images/depths/*
+# data/images/segs/*
+# data/images/labels/*
+# data/images/raw/*
 
 ## except the example dataset
-!data/images/raw/curved_paper.jpg
-!data/images/raw/garold.jpg
-!data/images/depths/depths.h5
-!data/images/segs/segs.h5
-!data/images/labels/labels.h5
+# !data/images/raw/curved_paper.jpg
+# !data/images/raw/garold.jpg
+# !data/images/depths/depths.h5
+# !data/images/segs/segs.h5
+# !data/images/labels/labels.h5
 
 
 
