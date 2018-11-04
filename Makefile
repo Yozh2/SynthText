@@ -24,7 +24,7 @@ SEG_EXECUTABLE=hed.py
 LABEL_EXECUTABLE=floodFill.py
 COLLECT_EXECUTABLE=collect_dataset.py
 
-all: clear prepare collect
+all: clear prepare collect run
 
 clear: clear_depths clear_segs clear_labels
 
@@ -53,3 +53,6 @@ prepare_label:
 
 collect:
 	cd $(COLLECT_DIR) && python $(COLLECT_EXECUTABLE) -v
+
+run:
+	python gen.py --viz
