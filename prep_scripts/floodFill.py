@@ -73,7 +73,8 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
             self.th = th
             self.ucm_h5 = h5py.File(db_path,'r')
             self.N = self.ucm_h5['names'].size
-            self.i = 0
+            print(list(self.ucm_h5['names']))
+            self.i = -1
 
         def __iter__(self):
             return self
@@ -83,7 +84,7 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
                 i = self.i
 
             return self.ucm_h5['names'][i][0].decode()
-            
+
         def __stop__(self):
             print("[floodFill]: Done multiprocessing")
             self.ucm_h5.close()
@@ -92,15 +93,16 @@ def process_db_parallel(db_path, dbo_mask, th=0.11):
         def get_valid_name(self):
             if self.i >= self.N:
                 self.__stop__()
-            
+
             imname = self.get_imname(self.i)
-            while self.i < self.N-1 and len(imname) < 4:
+            print(f"i: {self.i}, imname: {imname}, len: {len(imname)}")
+            while self.i < self.N-1: #and len(imname) < 4:
                 self.i += 1
                 imname = self.get_imname(self.i)
 
-            if len(imname) < 4:
-                self.__stop__()
-            
+            #if len(imname) < 4:
+            #    self.__stop__()
+
             return imname
 
         def __next__(self):
