@@ -24,7 +24,6 @@ SEG_EXECUTABLE=hed.py
 LABEL_EXECUTABLE=floodFill.py
 COLLECT_EXECUTABLE=collect_dataset.py
 
-.PHONY collect
 all: clear prepare collect
 
 clear: clear_depths clear_segs clear_labels
@@ -44,20 +43,13 @@ clear_labels:
 prepare: prepare_depth prepare_seg prepare_label
 
 prepare_depth:
-	cd $(DEPTH_NN_DIR)
-	python $(DEPTH_EXECUTABLE) -v
-	cd ../..
+	cd $(DEPTH_NN_DIR) && python $(DEPTH_EXECUTABLE) -v
 
 prepare_seg:
-	cd $(SEG_NN_DIR)
-	python $(SEG_EXECUTABLE) -v
-	cd ../..
+	cd $(SEG_NN_DIR) && python $(SEG_EXECUTABLE) -v
 
 prepare_label:
-	cd $(LABEL_DIR)
-	python $(LABEL_EXECUTABLE) -v
-	cd ..
+	cd $(LABEL_DIR) && python $(LABEL_EXECUTABLE) -v
 
 collect:
-	cd $(COLLECT_DIR)
-	python $(COLLECT_EXECUTABLE) -v
+	cd $(COLLECT_DIR) && python $(COLLECT_EXECUTABLE) -v
