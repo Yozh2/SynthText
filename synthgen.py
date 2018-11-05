@@ -628,7 +628,7 @@ class RendererV3(object):
         for i in range(ninstance):
             place_masks = copy.deepcopy(regions['place_mask'])
 
-            print (colorize(Color.CYAN, " ** instance # : %d"%i))
+            # print (colorize(Color.CYAN, " ** instance # : %d"%i))
 
             idict = {'img':[], 'charBB':None, 'wordBB':None, 'txt':None}
 
