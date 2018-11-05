@@ -15,7 +15,7 @@ LABELS_DATASET_PATH=$(LABELS)/labels.h5
 # Paths for preparation script directories
 DEPTH_NN_DIR=prep_scripts/FCRN_depth_prediction
 SEG_NN_DIR=prep_scripts/pytorch_hed
-LABEL_DIR=prep_sctipts
+LABEL_DIR=prep_scripts
 COLLECT_DIR=prep_scripts
 
 # Names of executables
@@ -23,6 +23,8 @@ DEPTH_EXECUTABLE=fcrn_predict.py
 SEG_EXECUTABLE=hed.py
 LABEL_EXECUTABLE=floodFill.py
 COLLECT_EXECUTABLE=collect_dataset.py
+
+dataset: clear prepare collect
 
 all: clear prepare collect run
 
