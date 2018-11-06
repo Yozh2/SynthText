@@ -7,11 +7,13 @@ import sys
 
 # Third-party imports
 import argparse
+import cv2
 import getopt
 import h5py
 import numpy as np
 import PIL
 import PIL.Image
+from tqdm import tqdm
 
 # PyTorch imports
 import torch
@@ -22,6 +24,7 @@ MY_DIR = osp.dirname(osp.abspath(__file__))
 RAW_DATA_DIR = osp.join(MY_DIR, '../../data/images/raw')
 OUTPUT_DIR = osp.join(MY_DIR, '../../data/images/segs')
 MODEL = 'bsds500'
+IMAGE_SHAPE = (1280, 720)
 
 ##########################################################
 assert(int(torch.__version__.replace('.', '')) >= 40) # requires at least pytorch version 0.4.0
@@ -88,7 +91,7 @@ class Network(torch.nn.Module):
             torch.nn.Sigmoid()
         )
 
-        self.load_state_dict(torch.load(osp.join(MY_DIR,'models', model + '.pytorch', map_location='cpu'))
+        self.load_state_dict(torch.load(osp.join(MY_DIR,'models', model + '.pytorch'), map_location='cpu'))
     # end
 
     def forward(self, tensorInput):
@@ -152,7 +155,7 @@ def add_segs_to_db(db_path='segs.h5', segs=None):
     names = list()
     seg_names = list(segs.keys())
 
-    for fname in seg_names:
+    for fname in tqdm(seg_names, desc='[HED]: Saving data'):
         dname = fname
         db['ucms'].create_dataset(dname, data=segs[fname])
         names.append(dname)
@@ -179,9 +182,19 @@ def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=Fals
         print(f'[HED]: Found {len(files)} files in {path_input}')
 
     segs = dict()
-    for i in range(n):
+    for i in tqdm(range(n), desc='[HED]: Processing data'):
+       
         img_name = osp.join(path_input, files[i])
-        img = np.array(PIL.Image.open(img_name))[:, :, ::-1]
+        image_pil = PIL.Image.open(img_name)
+        img = np.array(image_pil)[:, :, ::-1]
+        # if verbose:
+        #     print(f'Got input image with shape {img.shape}')
+        
+        # Resize image down to IMAGE_SHAPE
+        img = cv2.resize(img, (IMAGE_SHAPE[1], IMAGE_SHAPE[0]),
+                         interpolation=cv2.INTER_AREA)
+        # if verbose:
+        #     print(f'Rescaled down to {img.shape}')
         img = img.transpose(2, 0, 1).astype(np.float32) * (1.0 / 255.0)
         tensorInput = torch.FloatTensor(img)
         tensorOutput = estimate(tensorInput)
@@ -192,6 +205,8 @@ def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=Fals
 
     # Save segmentation to the dataset via h5py
     if not osp.exists(path_output):
+        if verbose:
+            print(f'[HED]: Creating directory {path_output} as it does not exist')
         os.makedirs(path_output, exist_ok=True)
 
     output_dset_path = osp.join(path_output, osp.basename(path_output) + '.h5')

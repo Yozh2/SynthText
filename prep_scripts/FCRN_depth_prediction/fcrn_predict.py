@@ -9,6 +9,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
 # Local imports
 import models
@@ -83,8 +84,8 @@ class FCRNDepthPredictor:
             raise FileNotFoundError
         else:
             image_cv2 = cv2.imread(path_input)
-        if self.verbose:
-            print(f'[FCRN]: Original image loaded with shape: {image_cv2.shape}')
+        # if self.verbose:
+        #     print(f'[FCRN]: Original image loaded with shape: {image_cv2.shape}')
 
         # Resize image to the requested shapes
         height, width = shape[0], shape[1]
@@ -94,14 +95,14 @@ class FCRNDepthPredictor:
             width = image_cv2.shape[1]
         image_cv2 = cv2.resize(image_cv2, (width, height),
             interpolation = cv2.INTER_AREA)
-        if self.verbose:
-            print(f'[FCRN]: Resized image shape: {image_cv2.shape}')
+        # if self.verbose:
+        #     print(f'[FCRN]: Resized image shape: {image_cv2.shape}')
 
         # Preprocess image to use it with tensorflow
         image_cv2 = image_cv2.astype('float32')
         image_cv2 = np.expand_dims(image_cv2, axis=0)
-        if self.verbose:
-            print(f'[FCRN]: Postprocessed image shape: {image_cv2.shape}')
+        # if self.verbose:
+        #     print(f'[FCRN]: Postprocessed image shape: {image_cv2.shape}')
         return image_cv2
 
     # def save_depth(self, depth, path):
@@ -139,7 +140,7 @@ class FCRNDepthPredictor:
         names_ascii = [n.encode("ascii", "ignore") for n in files]
         depths.create_dataset('names', (len(names_ascii),1),'S256', names_ascii)
 
-        for i in range(n):
+        for i in tqdm(range(n), desc='[FCRN]: Processing images'):
             # load image
             path_image = os.path.join(path_input, files[i])
             image = self.load_image(path_image)
@@ -148,7 +149,7 @@ class FCRNDepthPredictor:
             pred = self.predict(image, sess)
 
             # store depth into dataset
-            print(f'Saving data {i+1} of {n}')
+            # print(f'Saving data {i+1} of {n}')
             depths['depths'].create_dataset(files[i], data=pred)
 
         depths.close()
