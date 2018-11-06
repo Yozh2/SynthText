@@ -11,7 +11,6 @@ Entry-point for generating synthetic text images, as described in:
       year         = "2016",
     }
 """
-
 import numpy as np
 import h5py
 import os, sys, traceback
@@ -39,7 +38,8 @@ def get_data():
   """
   if not osp.exists(DB_FNAME):
     try:
-      colorprint(Color.BLUE,'\tdownloading data (56 M) from: '+DATA_URL,bold=True)
+      colorprint(Color.RED, '\t[SynthText]: No dataset found')
+      colorprint(Color.BLUE,'\t[SynthText]: downloading data (56 M) from: '+DATA_URL,bold=True)
       print()
       sys.stdout.flush()
       out_fname = 'data.tar.gz'
@@ -48,10 +48,10 @@ def get_data():
       tar.extractall()
       tar.close()
       os.remove(out_fname)
-      colorprint(Color.BLUE,'\n\tdata saved at:'+DB_FNAME,bold=True)
+      colorprint(Color.BLUE,'\n\t[SynthText]: data saved at:'+DB_FNAME,bold=True)
       sys.stdout.flush()
     except:
-      print (colorize(Color.RED,'Data not found and have problems downloading.',bold=True))
+      print (colorize(Color.RED,'[SynthText]: Data not found and have problems downloading.',bold=True))
       sys.stdout.flush()
       sys.exit(-1)
   # open the h5 file and return:
@@ -76,16 +76,16 @@ def add_res_to_db(imgname,res,db):
     db['data'][dname].attrs['txt'] = L
 
 
-def main(viz=False):
+def main(in_db=DB_FNAME, out_db=OUT_FILE, viz=False):
   # open databases:
-  print (colorize(Color.BLUE,'getting data..',bold=True))
+  print (colorize(Color.BLUE,'[SynthText]: getting data..',bold=True))
   db = get_data()
-  print (colorize(Color.BLUE,'\t-> done',bold=True))
+  print (colorize(Color.BLUE,'\t[SynthText]: Got data',bold=True))
 
   # open the output h5 file:
   out_db = h5py.File(OUT_FILE,'w')
   out_db.create_group('/data')
-  print (colorize(Color.GREEN,'Storing the output in: '+OUT_FILE, bold=True))
+  print (colorize(Color.GREEN,'[SynthText]: Storing the output in: '+OUT_FILE, bold=True))
 
   # get the names of the image files in the dataset:
   imnames = sorted(db['image'].keys())
@@ -95,9 +95,9 @@ def main(viz=False):
     NUM_IMG = N
   start_idx,end_idx = 0,min(NUM_IMG, N)
 
-  print('[SynthText]: Initializing RV3')
+  colorprint(Color.YELLOW, '[SynthText]: Initializing RV3')
   RV3 = RendererV3(DATA_PATH,max_time=SECS_PER_IMG)
-  print('[SynthText]: Initializing RV3: DONE')
+  colorprint(Color.YELLOW, '[SynthText]: Initializing RV3: DONE')
   for i in range(start_idx,end_idx):
     imname = imnames[i]
     try:
@@ -123,7 +123,7 @@ def main(viz=False):
       img = np.array(img.resize(sz,Image.ANTIALIAS))
       seg = np.array(Image.fromarray(seg).resize(sz,Image.NEAREST))
 
-      print (colorize(Color.RED,'%d of %d'%(i,end_idx-1), bold=True))
+      print (colorize(Color.RED, f'{i+1} of {end_idx}', bold=True))
       res = RV3.render_text(img,depth,seg,area,label,
                             ninstance=INSTANCE_PER_IMAGE,viz=viz)
       if len(res) > 0:
@@ -131,11 +131,11 @@ def main(viz=False):
         add_res_to_db(imname,res,out_db)
       # visualize the output:
       if viz:
-        if 'q' in input(colorize(Color.RED,'continue? (enter to continue, q to exit): ',True)):
+        if 'q' in input(colorize(Color.RED,'[SynthText]: continue? (enter to continue, q to exit): ',True)):
           break
     except:
       traceback.print_exc()
-      print (colorize(Color.GREEN,'>>>> CONTINUING....', bold=True))
+      print (colorize(Color.GREEN,'[SynthText]: >>>> CONTINUING....', bold=True))
       continue
   db.close()
   out_db.close()
@@ -143,7 +143,19 @@ def main(viz=False):
 
 if __name__=='__main__':
   import argparse
-  parser = argparse.ArgumentParser(description='Genereate Synthetic Scene-Text Images')
-  parser.add_argument('--viz',action='store_true',dest='viz',default=False,help='flag for turning on visualizations')
-  args = parser.parse_args()
-  main(args.viz)
+  def parse_args():
+    """ Parses arguments and returns args object to the main program"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--inp', type=str, nargs='?',
+                        default=DB_FNAME,
+                        help="Path to the input h5 dataset.")
+    parser.add_argument('-o', '--out', type=str, nargs='?',
+                        default=OUT_FILE,
+                        help="Path where to save the output h5 dataset.")
+    parser.add_argument('--viz', action='store_true', dest='viz', default=False,
+                        help='flag for turning on visualizations')
+    return parser.parse_known_args()
+
+  # parse arguments
+  ARGS, UNKNOWN = parse_args()
+  main(in_db=ARGS.inp, out_db=ARGS.out, viz=ARGS.viz)

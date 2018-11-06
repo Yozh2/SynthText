@@ -97,6 +97,7 @@ ENV/
 
 # data directory datasets
 data/images/*
+results/*
 
 ## except the example dataset
 !data/images/raw/curved_paper.jpg
