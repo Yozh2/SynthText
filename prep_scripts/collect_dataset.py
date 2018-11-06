@@ -8,10 +8,11 @@ from tqdm import tqdm
 
 # define default paths and constants
 VERBOSE = False
-COLLECT_IMAGES_PATH = '/data/synth_data/raw_multiplied'
-COLLECT_DEPTHS_PATH = '/data/synth_data/depths/depths.h5'
-COLLECT_LABELS_PATH = '/data/synth_data/images/labels/labels.h5'
-COLLECT_OUTPUT_PATH = '/data/synth_data/dset.h5'
+MY_DIR = osp.dirname(osp.abspath(__file__))
+COLLECT_IMAGES_PATH = osp.join(MYDIR, '../data/images/raw')
+COLLECT_DEPTHS_PATH = osp.join(MYDIR, '../data/images/depths/depths.h5')
+COLLECT_LABELS_PATH = osp.join(MYDIR, '../data/images/labels/labels.h5')
+COLLECT_OUTPUT_PATH = osp.join(MYDIR, '../data/images/dset.h5')
 
 def print_attrs(name, obj):
     '''Print dataset as a tree'''
@@ -88,4 +89,27 @@ def collect_existing_datasets(path_images=COLLECT_IMAGES_PATH,
     print('[COLLECT]: Done')
 
 if __name__ == '__main__':
-    collect_existing_datasets()
+    import argparse
+ 
+    def parse_args():
+        """Parses arguments and returns args object to the main program"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-i', '--images', type=str, nargs='?',
+                            default=COLLECT_IMAGES_PATH,
+                            help="Path to the directory with raw images")
+        parser.add_argument('-d', '--depths', type=str, nargs='?',
+                            default=COLLECT_DEPTHS_PATH,
+                            help="Path to the dataset with depths")
+        parser.add_argument('-l', '--labels', type=str, nargs='?',
+                            default=COLLECT_LABELS_PATH,
+                            help="Path to the dataset with labels")
+        parser.add_argument('-i', '--out', type=str, nargs='?',
+                            default=COLLECT_OUTPUT_PATH,
+                            help="Path to the output dataset ready for being used by SynthText")
+        return parser.parse_known_args()
+
+    # parse arguments
+    ARGS, UNKNOWN = parse_args()
+
+    collect_existing_datasets(path_images=ARGS.images, path_depths=ARGS.depths,
+                              path_labels=ARGS.labels, path_output=ARGS.out)

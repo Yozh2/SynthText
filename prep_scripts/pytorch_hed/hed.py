@@ -18,8 +18,9 @@ import torch
 import torch.utils.serialization
 
 # Default paths and names
-RAW_DATA_DIR = '../../data/images/raw'
-OUTPUT_DIR = '../../data/images/segs'
+MY_DIR = osp.dirname(osp.abspath(__file__))
+RAW_DATA_DIR = osp.join(MY_DIR, '../../data/images/raw')
+OUTPUT_DIR = osp.join(MY_DIR, '../../data/images/segs')
 MODEL = 'bsds500'
 
 ##########################################################
@@ -87,7 +88,7 @@ class Network(torch.nn.Module):
             torch.nn.Sigmoid()
         )
 
-        self.load_state_dict(torch.load('./models/' + model + '.pytorch', map_location='cpu'))
+        self.load_state_dict(torch.load(osp.join(MY_DIR,'models', model + '.pytorch', map_location='cpu'))
     # end
 
     def forward(self, tensorInput):

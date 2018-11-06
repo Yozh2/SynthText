@@ -14,15 +14,16 @@ import tensorflow as tf
 import models
 
 # Define default constants
-FCRN_MODEL_PATH = './models/NYU_FCRN.ckpt'
-FCRN_INPUT_PATH = '../../data/images/raw'
-FCRN_OUTPUT_PATH = '../../data/images/depths'
+MY_DIR = osp.dirname(osp.abspath(__file__))
+FCRN_MODEL_PATH = osp.join(MY_DIR, 'models/NYU_FCRN.ckpt')
+FCRN_INPUT_PATH = osp.join(MY_DIR, '../../data/images/raw')
+FCRN_OUTPUT_PATH = osp.join(MY_DIR, '../../data/images/depths')
 FCRN_IMAGE_SHAPE = (1280, 720) # height, width in pixels
-VERBOSE = True
+VERBOSE = False
 
 class FCRNDepthPredictor:
     def __init__(self, path_model=FCRN_MODEL_PATH,
-                 image_shape=None, channels=3, batch_size=1, verbose=False):
+                 image_shape=FCRN_IMAGE_SHAPE, channels=3, batch_size=1, verbose=False):
         '''Construct TensorFlow graph to predict depth in the future.
 
         Args:

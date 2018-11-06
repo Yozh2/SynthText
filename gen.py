@@ -22,7 +22,7 @@ import wget, tarfile
 ## Define some configuration variables:
 NUM_IMG = -1 # no. of images to use for generation (-1 to use all available):
 INSTANCE_PER_IMAGE = 1 # no. of times to use the same image
-SECS_PER_IMG = 5 #max time per image in seconds
+SECS_PER_IMG = 5 # max time per image in seconds
 
 # path to the data-file, containing image, depth and segmentation:
 DATA_PATH = 'data/synth_data'
@@ -31,7 +31,7 @@ DB_FNAME = osp.join(DATA_PATH,'dset.h5')
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
 OUT_FILE = '/data/synth_data/results/SynthText.h5'# 'results/SynthText.h5'
 
-def get_data():
+def get_data(db_fname=DB_FNAME, data_url=DATA_URL):
   """
   Download the image,depth and segmentation data:
   Returns, the h5 database.
@@ -76,16 +76,16 @@ def add_res_to_db(imgname,res,db):
     db['data'][dname].attrs['txt'] = L
 
 
-def main(in_db=DB_FNAME, out_db=OUT_FILE, viz=False):
+def main(in_db_path=DB_FNAME, out_db_path=OUT_FILE, data_path=DATA_PATH, viz=False):
   # open databases:
   print (colorize(Color.BLUE,'[SynthText]: getting data..',bold=True))
   db = get_data()
   print (colorize(Color.BLUE,'\t[SynthText]: Got data',bold=True))
 
   # open the output h5 file:
-  out_db = h5py.File(OUT_FILE,'w')
+  out_db = h5py.File(out_db_path,'w')
   out_db.create_group('/data')
-  print (colorize(Color.GREEN,'[SynthText]: Storing the output in: '+OUT_FILE, bold=True))
+  print (colorize(Color.GREEN,'[SynthText]: Storing the output in: '+out_db_path, bold=True))
 
   # get the names of the image files in the dataset:
   imnames = sorted(db['image'].keys())
@@ -96,7 +96,7 @@ def main(in_db=DB_FNAME, out_db=OUT_FILE, viz=False):
   start_idx,end_idx = 0,min(NUM_IMG, N)
 
   colorprint(Color.YELLOW, '[SynthText]: Initializing RV3')
-  RV3 = RendererV3(DATA_PATH,max_time=SECS_PER_IMG)
+  RV3 = RendererV3(data_path, max_time=SECS_PER_IMG)
   colorprint(Color.YELLOW, '[SynthText]: Initializing RV3: DONE')
   for i in range(start_idx,end_idx):
     imname = imnames[i]
@@ -152,10 +152,13 @@ if __name__=='__main__':
     parser.add_argument('-o', '--out', type=str, nargs='?',
                         default=OUT_FILE,
                         help="Path where to save the output h5 dataset.")
+    parser.add_argument('-d', '--data', type=str, nargs='?',
+                        default=DATA_PATH,
+                        help="The directory where all the data is stored.")
     parser.add_argument('--viz', action='store_true', dest='viz', default=False,
                         help='flag for turning on visualizations')
     return parser.parse_known_args()
 
   # parse arguments
   ARGS, UNKNOWN = parse_args()
-  main(in_db=ARGS.inp, out_db=ARGS.out, viz=ARGS.viz)
+  main(in_db_path=ARGS.inp, out_db_path=ARGS.out, data_path=ARGS.data, viz=ARGS.viz)

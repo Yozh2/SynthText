@@ -18,7 +18,8 @@ import sys
 import traceback
 
 # Define default paths
-BASE_DIR = '../data/images'
+MY_DIR = os.dirname(osp.abspath(__file__))
+BASE_DIR = osp.join(MY_DIR, '../data/images')
 DB_PATH = osp.join(BASE_DIR, 'segs', 'segs.h5')
 OUT_PATH = osp.join(BASE_DIR, 'labels', 'labels.h5')
 

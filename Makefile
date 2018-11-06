@@ -1,16 +1,19 @@
 # Data paths for directories
-DATA_PATH=/data/synth_data
+DATA_PATH=./data/images# /data/synth_data
 IMAGES_PATH=$(DATA_PATH)
-IMAGES_RAW_PATH=$(IMAGES_PATH)/raw_multiplied
+IMAGES_RAW_PATH=$(IMAGES_PATH)/raw # /raw_multiplied
 DEPTHS_PATH=$(IMAGES_PATH)/depths
 SEGS_PATH=$(IMAGES_PATH)/segs
 LABELS_PATH=$(IMAGES_PATH)/labels
+RESULTS_PATH=$(DATA_PATH)/results
 
 # Paths for datasets
 IMAGES_DATASET_PATH=$(IMAGES_RAW_PATH)
 DEPTHS_DATASET_PATH=$(DEPTHS_PATH)/depths.h5
 SEGS_DATASET_PATH=$(SEGS_PATH)/segs.h5
-LABELS_DATASET_PATH=$(LABELS)/labels.h5
+LABELS_DATASET_PATH=$(LABELS_PATH)/labels.h5
+INPUT_DATASET_PATH=$(DATA_PATH)/dset.h5
+OUTPUT_DATASET_PATH=$(RESULTS_PATH)/SynthText.h5
 
 # Paths for preparation script directories
 DEPTH_NN_DIR=prep_scripts/FCRN_depth_prediction
@@ -27,6 +30,8 @@ COLLECT_EXECUTABLE=collect_dataset.py
 dataset: clear prepare collect
 
 all: clear prepare collect run
+
+clean: clear
 
 clear: clear_depths clear_segs clear_labels
 
@@ -45,16 +50,16 @@ clear_labels:
 prepare: prepare_depth prepare_seg prepare_label
 
 prepare_depth:
-	cd $(DEPTH_NN_DIR) && python $(DEPTH_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(DEPTHS_PATH)
+	python $(DEPTH_NN_DIR)/$(DEPTH_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(DEPTHS_PATH)
 
 prepare_seg:
-	cd $(SEG_NN_DIR) && python $(SEG_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(SEGS_PATH)
+	python $(SEG_NN_DIR)/$(SEG_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(SEGS_PATH)
 
 prepare_label:
-	cd $(LABEL_DIR) && python $(LABEL_EXECUTABLE) -v --inp $(SEGS_DATASET_PATH) --out $(LABELS_PATH)
+	python $(LABEL_DIR)/$(LABEL_EXECUTABLE) -v --inp $(SEGS_DATASET_PATH) --out $(LABELS_DATASET_PATH)
 
 collect:
-	cd $(COLLECT_DIR) && python $(COLLECT_EXECUTABLE) -v
+	python $(COLLECT_DIR)/$(COLLECT_EXECUTABLE) -v --images $(IMAGES_RAW_PATH) --depths $(DEPTHS_DATASET_PATH) --labels $(LABELS_DATASET_PATH) --out $(INPUT_DATASET_PATH)
 
 run:
-	python gen.py --viz
+	python gen.py --viz --inp $(INPUT_DATASET_PATH) --out $(OUTPUT_DATASET_PATH) --data $(DATA_PATH)
