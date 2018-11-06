@@ -8,10 +8,10 @@ from tqdm import tqdm
 
 # define default paths and constants
 VERBOSE = False
-COLLECT_IMAGES_PATH = '../data/images/raw'
-COLLECT_DEPTHS_PATH = '../data/images/depths/depths.h5'
-COLLECT_LABELS_PATH = '../data/images/labels/labels.h5'
-COLLECT_OUTPUT_PATH = '../data/dset.h5'
+COLLECT_IMAGES_PATH = '/data/synth_data/raw_multiplied'
+COLLECT_DEPTHS_PATH = '/data/synth_data/depths/depths.h5'
+COLLECT_LABELS_PATH = '/data/synth_data/images/labels/labels.h5'
+COLLECT_OUTPUT_PATH = '/data/synth_data/dset.h5'
 
 def print_attrs(name, obj):
     '''Print dataset as a tree'''

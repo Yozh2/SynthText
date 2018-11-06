@@ -210,7 +210,7 @@ if __name__ == '__main__':
                             help="The name of the model to use.")
         parser.add_argument('-i', '--inp', type=str, nargs='?',
                             default=RAW_DATA_DIR,
-                            help="Path to the imput dir with raw images.")
+                            help="Path to the input dir with raw images.")
         parser.add_argument('-o', '--out', type=str, nargs='?',
                             default=OUTPUT_DIR,
                             help="Path to the output dir with depth images and datasets.")

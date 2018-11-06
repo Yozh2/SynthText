@@ -1,10 +1,10 @@
 # Data paths for directories
-DATA_PATH=data
-IMAGES_PATH=$(DATA_PATH)/images
-IMAGES_RAW_PATH=$(IMAGES_PATH)/raw
+DATA_PATH=/data/synth_data
+IMAGES_PATH=$(DATA_PATH)
+IMAGES_RAW_PATH=$(IMAGES_PATH)/raw_multiplied
 DEPTHS_PATH=$(IMAGES_PATH)/depths
 SEGS_PATH=$(IMAGES_PATH)/segs
-DEPTHS_PATH=$(IMAGES_PATH)/labels
+LABELS_PATH=$(IMAGES_PATH)/labels
 
 # Paths for datasets
 IMAGES_DATASET_PATH=$(IMAGES_RAW_PATH)
@@ -45,13 +45,13 @@ clear_labels:
 prepare: prepare_depth prepare_seg prepare_label
 
 prepare_depth:
-	cd $(DEPTH_NN_DIR) && python $(DEPTH_EXECUTABLE) -v
+	cd $(DEPTH_NN_DIR) && python $(DEPTH_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(DEPTHS_PATH)
 
 prepare_seg:
-	cd $(SEG_NN_DIR) && python $(SEG_EXECUTABLE) -v
+	cd $(SEG_NN_DIR) && python $(SEG_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(SEGS_PATH)
 
 prepare_label:
-	cd $(LABEL_DIR) && python $(LABEL_EXECUTABLE) -v
+	cd $(LABEL_DIR) && python $(LABEL_EXECUTABLE) -v --inp $(SEGS_DATASET_PATH) --out $(LABELS_PATH)
 
 collect:
 	cd $(COLLECT_DIR) && python $(COLLECT_EXECUTABLE) -v

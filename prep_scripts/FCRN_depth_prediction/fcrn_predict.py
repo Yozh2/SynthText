@@ -17,7 +17,7 @@ import models
 FCRN_MODEL_PATH = './models/NYU_FCRN.ckpt'
 FCRN_INPUT_PATH = '../../data/images/raw'
 FCRN_OUTPUT_PATH = '../../data/images/depths'
-FCRN_IMAGE_SHAPE = (1024, 768) # height, width in pixels
+FCRN_IMAGE_SHAPE = (1280, 720) # height, width in pixels
 VERBOSE = True
 
 class FCRNDepthPredictor:
