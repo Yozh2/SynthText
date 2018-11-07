@@ -9,10 +9,10 @@ from tqdm import tqdm
 # define default paths and constants
 VERBOSE = False
 MY_DIR = osp.dirname(osp.abspath(__file__))
-COLLECT_IMAGES_PATH = osp.join(MYDIR, '../data/images/raw')
-COLLECT_DEPTHS_PATH = osp.join(MYDIR, '../data/images/depths/depths.h5')
-COLLECT_LABELS_PATH = osp.join(MYDIR, '../data/images/labels/labels.h5')
-COLLECT_OUTPUT_PATH = osp.join(MYDIR, '../data/images/dset.h5')
+COLLECT_IMAGES_PATH = osp.join(MY_DIR, '../data/images/raw')
+COLLECT_DEPTHS_PATH = osp.join(MY_DIR, '../data/images/depths/depths.h5')
+COLLECT_LABELS_PATH = osp.join(MY_DIR, '../data/images/labels/labels.h5')
+COLLECT_OUTPUT_PATH = osp.join(MY_DIR, '../data/images/dset.h5')
 
 def print_attrs(name, obj):
     '''Print dataset as a tree'''
@@ -61,7 +61,7 @@ def collect_existing_datasets(path_images=COLLECT_IMAGES_PATH,
     # Create output dataset
     if not osp.exists(path_output):
         print(f'[COLLECT]: Storing data in {path_output}')
-        os.makedirs(osp.dirname(path_output))
+        os.makedirs(osp.dirname(path_output), exist_ok=True)
 
     out_dset = h5py.File(osp.abspath(path_output), 'w')
     out_dset.create_group('depth')
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         parser.add_argument('-l', '--labels', type=str, nargs='?',
                             default=COLLECT_LABELS_PATH,
                             help="Path to the dataset with labels")
-        parser.add_argument('-i', '--out', type=str, nargs='?',
+        parser.add_argument('-o', '--out', type=str, nargs='?',
                             default=COLLECT_OUTPUT_PATH,
                             help="Path to the output dataset ready for being used by SynthText")
         return parser.parse_known_args()

@@ -1,3 +1,7 @@
+# Flags (comment values to disable flags)
+VERBOSE= -v
+VISUAL= --viz
+
 # Data paths for directories
 DATA_PATH=./data/images# /data/synth_data
 IMAGES_PATH=$(DATA_PATH)
@@ -50,16 +54,16 @@ clear_labels:
 prepare: prepare_depth prepare_seg prepare_label
 
 prepare_depth:
-	python $(DEPTH_NN_DIR)/$(DEPTH_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(DEPTHS_PATH)
+	python $(DEPTH_NN_DIR)/$(DEPTH_EXECUTABLE) $(VERBOSE) --inp $(IMAGES_RAW_PATH) --out $(DEPTHS_PATH)
 
 prepare_seg:
-	python $(SEG_NN_DIR)/$(SEG_EXECUTABLE) -v --inp $(IMAGES_RAW_PATH) --out $(SEGS_PATH)
+	python $(SEG_NN_DIR)/$(SEG_EXECUTABLE) $(VERBOSE) --inp $(IMAGES_RAW_PATH) --out $(SEGS_PATH)
 
 prepare_label:
-	python $(LABEL_DIR)/$(LABEL_EXECUTABLE) -v --inp $(SEGS_DATASET_PATH) --out $(LABELS_DATASET_PATH)
+	python $(LABEL_DIR)/$(LABEL_EXECUTABLE) $(VERBOSE) --inp $(SEGS_DATASET_PATH) --out $(LABELS_DATASET_PATH)
 
 collect:
-	python $(COLLECT_DIR)/$(COLLECT_EXECUTABLE) -v --images $(IMAGES_RAW_PATH) --depths $(DEPTHS_DATASET_PATH) --labels $(LABELS_DATASET_PATH) --out $(INPUT_DATASET_PATH)
+	python $(COLLECT_DIR)/$(COLLECT_EXECUTABLE) --images $(IMAGES_RAW_PATH) --depths $(DEPTHS_DATASET_PATH) --labels $(LABELS_DATASET_PATH) --out $(INPUT_DATASET_PATH)
 
 run:
-	python gen.py --viz --inp $(INPUT_DATASET_PATH) --out $(OUTPUT_DATASET_PATH) --data $(DATA_PATH)
+	python gen.py $(VISUAL) --inp $(INPUT_DATASET_PATH) --out $(OUTPUT_DATASET_PATH) --data $(DATA_PATH)
