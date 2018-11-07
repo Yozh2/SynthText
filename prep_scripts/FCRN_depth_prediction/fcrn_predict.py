@@ -19,7 +19,7 @@ MY_DIR = osp.dirname(osp.abspath(__file__))
 FCRN_MODEL_PATH = osp.join(MY_DIR, 'models/NYU_FCRN.ckpt')
 FCRN_INPUT_PATH = osp.join(MY_DIR, '../../data/images/raw')
 FCRN_OUTPUT_PATH = osp.join(MY_DIR, '../../data/images/depths')
-FCRN_IMAGE_SHAPE = (1280, 720) # height, width in pixels
+FCRN_IMAGE_SHAPE = (1280*2, 720*2) # height, width in pixels
 VERBOSE = False
 
 class FCRNDepthPredictor:
