@@ -16,9 +16,10 @@ import numpy as np
 import scipy.io as sio
 import sys
 import traceback
+from tqdm import tqdm
 
 # Define default paths
-MY_DIR = os.dirname(osp.abspath(__file__))
+MY_DIR = osp.dirname(osp.abspath(__file__))
 BASE_DIR = osp.join(MY_DIR, '../data/images')
 DB_PATH = osp.join(BASE_DIR, 'segs', 'segs.h5')
 OUT_PATH = osp.join(BASE_DIR, 'labels', 'labels.h5')
@@ -30,7 +31,6 @@ def get_seed(sx,sy,ucm):
             return (sy[i],sx[i])
 
 def get_mask(ucm, viz=False):
-    print('getting mask')
     ucm = ucm.copy()
     h,w = ucm.shape[:2]
     mask = np.zeros((h-2, w-2), 'float32')
@@ -50,7 +50,7 @@ def get_mask(ucm, viz=False):
         sx,sy = np.where(mask == 0)
         seed = get_seed(sx, sy, ucm)
         i += 1
-    print("[floodFill]: floodfill terminated in %d steps" % i)
+    # print("[floodFill]: floodfill terminated in %d steps" % i)
 
     if viz:
         plt.imshow(mask)
@@ -75,7 +75,7 @@ def process_db_parallel(db_path, dbo, th=0.11):
             self.th = th
             self.ucm_h5 = h5py.File(db_path,'r')
             self.N = self.ucm_h5['names'].size
-            print(list(self.ucm_h5['names']))
+            # print(list(self.ucm_h5['names']))
             self.i = 0
 
         def __iter__(self):
@@ -86,7 +86,7 @@ def process_db_parallel(db_path, dbo, th=0.11):
             return self.ucm_h5['names'][i][0].decode()
 
         def __stop__(self):
-            print("[floodFill]: Done iterations")
+            # print("[floodFill]: Done iterations")
             self.ucm_h5.close()
             raise StopIteration
 
@@ -95,7 +95,7 @@ def process_db_parallel(db_path, dbo, th=0.11):
                 self.__stop__()
 
             imname = self.get_imname(self.i)
-            print(f"i: {self.i}, imname: {imname}, len: {len(imname)}")
+            # print(f"i: {self.i}, imname: {imname}, len: {len(imname)}")
             while self.i < self.N-1 and len(imname) < 4:
                 self.i += 1
                 imname = self.get_imname(self.i)
@@ -103,13 +103,13 @@ def process_db_parallel(db_path, dbo, th=0.11):
             if len(imname) < 4:
                self.__stop__()
 
-            print(f'return valid {imname}')
+            # print(f'return valid {imname}')
             return imname
 
         def __next__(self):
             imname = self.get_valid_name()
-            print(f"[floodFill]: {self.i + 1} of {self.N}")
-            print(f'getting ucm for {imname}')
+            # print(f"[floodFill]: {self.i + 1} of {self.N}")
+            # print(f'getting ucm for {imname}')
             ucm = self.ucm_h5['ucms'][imname][:]
             ucm = ucm.copy()
             self.i += 1
@@ -123,19 +123,21 @@ def process_db_parallel(db_path, dbo, th=0.11):
     print('[floodFill]: Creating multiprocessing pool')
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
 
-    print('[floodFill]: Processing data')
     names = list()
-    for res in ucm_result:
-        if res is None:
-            continue
-        print('getting res')
-        ((mask,area,label), imname) = res
-        print("[floodFill]: got back: ", imname)
-        mask = mask.astype('uint16')
-        mask_dset = dbo['mask'].create_dataset(imname, data=mask.T)
-        names.append(imname)
-        mask_dset.attrs['area'] = area
-        mask_dset.attrs['label'] = label
+    with tqdm(total=ucm_iter.N, desc='[floodFill]: Processing data') as pbar:
+        for res in ucm_result:
+            if res is None:
+                continue
+            
+            ((mask,area,label), imname) = res
+            # print("[floodFill]: got back: ", imname)
+            mask = mask.astype('uint16')
+            mask_dset = dbo['mask'].create_dataset(imname, data=mask.T)
+            names.append(imname)
+            mask_dset.attrs['area'] = area
+            mask_dset.attrs['label'] = label
+
+            pbar.update()
 
 
 def floodfill_dataset(db_path=DB_PATH, out_path=OUT_PATH, verbose=False):
