@@ -25,11 +25,13 @@ INSTANCE_PER_IMAGE = 1 # no. of times to use the same image
 SECS_PER_IMG = 5 # max time per image in seconds
 
 # path to the data-file, containing image, depth and segmentation:
-DATA_PATH = 'data/synth_data'
-DB_FNAME = osp.join(DATA_PATH,'dset.h5')
+DATA_PATH = './data'
+TXTDATA_PATH = osp.join(DATA_PATH, 'newsgroup', 'newsgroup.txt')
+IMAGES_PATH = osp.join(DATA_PATH, 'images')
+DB_FNAME = osp.join(IMAGES_PATH,'dset.h5')
 # url of the data (google-drive public file):
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
-OUT_FILE = '/data/synth_data/results/SynthText.h5'# 'results/SynthText.h5'
+OUT_FILE ='results/SynthText.h5'
 
 def get_data(db_fname=DB_FNAME, data_url=DATA_URL):
   """
@@ -38,8 +40,16 @@ def get_data(db_fname=DB_FNAME, data_url=DATA_URL):
   """
   if not osp.exists(DB_FNAME):
     try:
-      colorprint(Color.RED, '\t[SynthText]: No dataset found')
-      colorprint(Color.BLUE,'\t[SynthText]: downloading data (56 M) from: '+DATA_URL,bold=True)
+      colorprint(Color.RED, '[SynthText]: No dataset found')
+      colorprint(Color.YELLOW, '[SynthText]: Do you want to download demo?')
+      ans = input('y/[N]').lower()
+      if ans in ['no', 'n', '']:
+        exit(0)
+      elif ans not in ['yes', 'y']:
+        colorprint(Color.YELLOW, '[SynthText]: Wrong answer {answer}')
+        exit(0)
+
+      colorprint(Color.BLUE,'[SynthText]: downloading data (56 M) from: '+DATA_URL,bold=True)
       print()
       sys.stdout.flush()
       out_fname = 'data.tar.gz'
@@ -48,15 +58,16 @@ def get_data(db_fname=DB_FNAME, data_url=DATA_URL):
       tar.extractall()
       tar.close()
       os.remove(out_fname)
-      colorprint(Color.BLUE,'\n\t[SynthText]: data saved at:'+DB_FNAME,bold=True)
+      colorprint(Color.BLUE,'\n\t[SynthText]: data saved at:' + db_fname, bold=True)
       sys.stdout.flush()
     except:
       print (colorize(Color.RED,'[SynthText]: Data not found and have problems downloading.',bold=True))
       sys.stdout.flush()
       sys.exit(-1)
+
   # open the h5 file and return:
-  db = h5py.File(DB_FNAME,'r')
-  print('[SynthText]: Opened dataset file', DB_FNAME)
+  db = h5py.File(db_fname, 'r')
+  print('[SynthText]: Opened dataset file', db_fname)
   return db
 
 def add_res_to_db(imgname,res,db):
@@ -76,14 +87,16 @@ def add_res_to_db(imgname,res,db):
     db['data'][dname].attrs['txt'] = L
 
 
-def main(in_db_path=DB_FNAME, out_db_path=OUT_FILE, data_path=DATA_PATH, viz=False):
+def main(in_db_path=DB_FNAME, out_db_path=OUT_FILE, data_path=DATA_PATH, txtdata_path=TXTDATA_PATH, viz=False):
   # open databases:
   print (colorize(Color.BLUE,'[SynthText]: getting data..',bold=True))
-  db = get_data()
+  db = get_data(in_db_path)
   print (colorize(Color.BLUE,'\t[SynthText]: Got data',bold=True))
 
   # open the output h5 file:
-  out_db = h5py.File(out_db_path,'w')
+  if not osp.exists(out_db_path):
+    os.makedirs(osp.dirname(osp.abspath(out_db_path)), exist_ok=True)
+  out_db = h5py.File(osp.abspath(out_db_path), 'w')
   out_db.create_group('/data')
   print (colorize(Color.GREEN,'[SynthText]: Storing the output in: '+out_db_path, bold=True))
 
@@ -96,7 +109,7 @@ def main(in_db_path=DB_FNAME, out_db_path=OUT_FILE, data_path=DATA_PATH, viz=Fal
   start_idx,end_idx = 0,min(NUM_IMG, N)
 
   colorprint(Color.YELLOW, '[SynthText]: Initializing RV3')
-  RV3 = RendererV3(data_path, max_time=SECS_PER_IMG)
+  RV3 = RendererV3(data_path, txtdata_path, max_time=SECS_PER_IMG)
   colorprint(Color.YELLOW, '[SynthText]: Initializing RV3: DONE')
   for i in range(start_idx,end_idx):
     imname = imnames[i]
@@ -155,6 +168,9 @@ if __name__=='__main__':
     parser.add_argument('-d', '--data', type=str, nargs='?',
                         default=DATA_PATH,
                         help="The directory where all the data is stored.")
+    parser.add_argument('-t', '--txtdata', type=str, nargs='?',
+                        default=TXTDATA_PATH,
+                        help="Path to the .txt file where all the text data is stored.")
     parser.add_argument('--viz', action='store_true', dest='viz', default=False,
                         help='flag for turning on visualizations')
     return parser.parse_known_args()

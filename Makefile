@@ -1,17 +1,19 @@
 # Flags (comment values to disable flags)
 VERBOSE= -v
-VISUAL= --viz
+VISUAL= #--viz
 
 # Data paths for directories
-DATA_PATH=./data/images# /data/synth_data
+SYNTHTEXT_DATA_PATH=./data
+DATA_PATH=./data/images
 IMAGES_PATH=$(DATA_PATH)
-IMAGES_RAW_PATH=$(IMAGES_PATH)/raw # /raw_multiplied
+IMAGES_RAW_PATH=$(IMAGES_PATH)/raw 
 DEPTHS_PATH=$(IMAGES_PATH)/depths
 SEGS_PATH=$(IMAGES_PATH)/segs
 LABELS_PATH=$(IMAGES_PATH)/labels
 RESULTS_PATH=$(DATA_PATH)/results
 
 # Paths for datasets
+TXT_DATASET_PATH=$(SYNTHTEXT_DATA_PATH)/newsgroup/newsgroup.txt
 IMAGES_DATASET_PATH=$(IMAGES_RAW_PATH)
 DEPTHS_DATASET_PATH=$(DEPTHS_PATH)/depths.h5
 SEGS_DATASET_PATH=$(SEGS_PATH)/segs.h5
@@ -66,4 +68,4 @@ collect:
 	python $(COLLECT_DIR)/$(COLLECT_EXECUTABLE) --images $(IMAGES_RAW_PATH) --depths $(DEPTHS_DATASET_PATH) --labels $(LABELS_DATASET_PATH) --out $(INPUT_DATASET_PATH)
 
 run:
-	python gen.py $(VISUAL) --inp $(INPUT_DATASET_PATH) --out $(OUTPUT_DATASET_PATH) --data $(DATA_PATH)
+	python gen.py $(VISUAL) --inp $(INPUT_DATASET_PATH) --out $(OUTPUT_DATASET_PATH) --data $(SYNTHTEXT_DATA_PATH) --txtdata $(TXT_DATASET_PATH)
