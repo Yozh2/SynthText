@@ -19,7 +19,8 @@ MY_DIR = osp.dirname(osp.abspath(__file__))
 FCRN_MODEL_PATH = osp.join(MY_DIR, 'models/NYU_FCRN.ckpt')
 FCRN_INPUT_PATH = osp.join(MY_DIR, '../../data/images/raw')
 FCRN_OUTPUT_PATH = osp.join(MY_DIR, '../../data/images/depths')
-FCRN_IMAGE_SHAPE = (1280*2, 720*2) # height, width in pixels
+FCRN_IMAGE_SHAPE = (1280, 720) # height, width in pixels
+REQUESTED_IMAGE_SHAPE = (1280, 720) # height, width im pixels
 VERBOSE = False
 
 class FCRNDepthPredictor:
@@ -146,11 +147,14 @@ class FCRNDepthPredictor:
             image = self.load_image(path_image)
 
             # estimate depth
-            pred = self.predict(image, sess)
+            pred = np.squeeze(self.predict(image, sess), axis=0)
+
+            # Resize depth to the requested image shape		
+            pred_resized = cv2.resize(pred, (REQUESTED_IMAGE_SHAPE[1], REQUESTED_IMAGE_SHAPE[0]), interpolation=cv2.INTER_AREA)
 
             # store depth into dataset
             # print(f'Saving data {i+1} of {n}')
-            depths['depths'].create_dataset(files[i], data=pred)
+            depths['depths'].create_dataset(files[i], data=pred_resized)
 
         depths.close()
         return path_output

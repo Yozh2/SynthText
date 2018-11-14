@@ -4,9 +4,9 @@ VISUAL= #--viz
 
 # Data paths for directories
 SYNTHTEXT_DATA_PATH=./data
-DATA_PATH=./data/images
+DATA_PATH=/data/synth_data# ./data/images
 IMAGES_PATH=$(DATA_PATH)
-IMAGES_RAW_PATH=$(IMAGES_PATH)/raw 
+IMAGES_RAW_PATH=$(IMAGES_PATH)/raw_transformed# /raw 
 DEPTHS_PATH=$(IMAGES_PATH)/depths
 SEGS_PATH=$(IMAGES_PATH)/segs
 LABELS_PATH=$(IMAGES_PATH)/labels
@@ -33,7 +33,7 @@ SEG_EXECUTABLE=hed.py
 LABEL_EXECUTABLE=floodFill.py
 COLLECT_EXECUTABLE=collect_dataset.py
 
-dataset: clear prepare collect
+dataset: prepare collect
 
 all: clear prepare collect run
 

@@ -24,7 +24,8 @@ MY_DIR = osp.dirname(osp.abspath(__file__))
 RAW_DATA_DIR = osp.join(MY_DIR, '../../data/images/raw')
 OUTPUT_DIR = osp.join(MY_DIR, '../../data/images/segs')
 MODEL = 'bsds500'
-IMAGE_SHAPE = (1280, 720)
+IMAGE_SHAPE = (640, 360)
+REQUESTED_IMAGE_SHAPE = (1280, 720)
 
 ##########################################################
 assert(int(torch.__version__.replace('.', '')) >= 40) # requires at least pytorch version 0.4.0
@@ -201,7 +202,8 @@ def process_images(path_input=RAW_DATA_DIR, path_output=OUTPUT_DIR, verbose=Fals
 
         # Get segmentation
         seg = (tensorOutput.clamp(0.0, 1.0).numpy().transpose(1, 2, 0)[:, :, 0] * 255.0).astype(np.uint8)
-        segs[files[i]] = seg
+        seg_resized = cv2.resize(seg, (REQUESTED_IMAGE_SHAPE[1], REQUESTED_IMAGE_SHAPE[0]), interpolation=cv2.INTER_AREA)
+        segs[files[i]] = seg_resized
 
     # Save segmentation to the dataset via h5py
     if not osp.exists(path_output):
